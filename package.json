@@ -14,9 +14,8 @@
     "bcrypto": "git+https://github.com/bcoin-org/bcrypto.git",
     "bcurl": "https://github.com/tynes/bcurl#fix-join",
     "bval": "https://github.com/tynes/bval#hex-getter",
-    "ethereum-ens": "git+https://github.com/ensdomains/ensjs.git",
+    "ethereum-ens": "git+https://github.com/tynes/ensjs.git",
     "ethjs-ens": "git+https://github.com/ethjs/ethjs-ens.git",
-    "ethjs-provider-http": "^0.1.6",
-    "web3": "^1.2.6"
+    "ethjs-provider-http": "^0.1.6"
   }
 }
