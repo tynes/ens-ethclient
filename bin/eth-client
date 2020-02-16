@@ -1,0 +1,117 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const Config = require('bcfg');
+const EthClient = require('../lib/client');
+
+// TODO(mark): default network port map
+
+class CLI {
+  constructor() {
+    this.config = new Config('ethclient', {
+      suffix: 'network',
+      fallback: 'main',
+      alias: {
+        'n': 'network',
+        'u': 'url',
+        'h': 'httphost',
+        'p': 'httpport'
+      }
+    });
+
+    this.config.load({
+      argv: true,
+      env: true
+    });
+
+    this.argv = this.config.argv;
+
+    this.client = new EthClient({
+      url: this.config.str('url'),
+      host: this.config.str('http-host'),
+      port: this.config.uint('http-port'),
+      timeout: this.config.uint('timeout', 5000)
+    });
+  }
+
+  async getHeight() {
+    const response = await this.client.getHeight();
+
+    this.log(response);
+  }
+
+  async getBlock() {
+    let hash = this.config.str(0, '');
+
+    if (hash.length !== 64 && !hash.startsWith('0x'))
+      hash = parseInt(hash, 10);
+
+    const detail = this.config.bool(1, false);
+
+    const response = await this.client.getBlock(hash, detail);
+    this.log(response);
+  }
+
+  // TODO(mark): implement
+  async getTransaction() {
+    // if 1 arg, it must be a hash
+    // if 2 args, if first is hash it is block hash
+    // if it is an int, then its a block height
+    // second arg must be an int
+  }
+
+  async resolveENS() {
+    let domain = this.config.str(0, '');
+    const type = this.config.str(1, '');
+
+    const response = await this.client.resolveENS(domain, type);
+
+    this.log(response);
+  }
+
+  log(json) {
+    if (typeof json === 'string')
+      return console.log.apply(console, arguments);
+    return console.log(JSON.stringify(json, null, 2));
+  }
+
+  async open() {
+    switch (this.argv.shift()) {
+      case 'height':
+        await this.getHeight();
+        break;
+      case 'block':
+        await this.getBlock();
+        break;
+      case 'transaction':
+        await this.getTransaction();
+        break;
+      case 'ens':
+        await this.resolveENS();
+        break;
+      default:
+        this.log('Unrecognized command.');
+        this.log('Commands:');
+        this.log('  $ height: View Synced Height.');
+        this.log('  $ block [hash/height]: View block.');
+        this.log('  $ transaction [hash/height index]: View txn.');
+        this.log('  $ ens [domain]: Resolve ENS domain.');
+        break;
+    }
+  }
+
+  async destroy() {
+    if (this.client && this.client.opened)
+      await this.client.close();
+  }
+}
+
+(async () => {
+  const cli = new CLI();
+  await cli.open();
+  await cli.destroy();
+})().catch((err) => {
+  console.error(err.stack);
+  process.exit(1);
+});
